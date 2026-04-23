@@ -13,15 +13,14 @@ Esta automação provê uma sincronização robusta e inteligente entre bases de
 * **Mapeamento Relacional de Horários:** Identifica a disciplina vinculada ao evento e consulta uma base secundária para definir o horário de início e fim com base no dia da semana.
 * **Gestão de Notificações Inteligentes:** * **Provas:** Alertas em 6 e 3 dias de antecedência, disparados invariavelmente às 09:00 AM.
     * **Trabalhos:** Alerta em 1 dia de antecedência às 09:00 AM.
-    * **Contas a Pagar:** Conversão para evento com horário fixo (09:00-10:00) para garantir notificação precisa no dia do vencimento.
-* **Ciclo de Vida de Eventos:** Suporta criação, atualização de metadados e exclusão física no Google Calendar através do gatilho de status "Excluida".
+    * **Contas a Pagar:** Conversão para evento com horário fixo (09:00-10:00) para garantir notificação precisa no dia do vencimento às 09:00 AM.
+* **Ciclo de Vida de Eventos:** Suporta criação, atualização de metadados e exclusão física no Google Calendar através do gatilho de tipo "Excluida".
 
 ## 🛠️ Tecnologias Utilizadas
 
 * **Google Apps Script:** Motor de execução e integração.
 * **Notion API (v2022-06-28):** Fonte de dados.
 * **Google Calendar API:** Destino da sincronização.
-
 
 ---
 
@@ -48,70 +47,55 @@ Onde você insere seus compromissos, provas e contas.
 * **Propriedades Obrigatórias:**
     * `Name` (Título): Descrição do compromisso.
     * `Date` (Data): Data do evento.
-    * `Tipo` (Select): Determina a lógica de notificação e o gatilho de exclusão. Opções:
-        * `Prova`: Notificação 6 e 3 dias antes (09:00 AM).
-        * `Trabalho`: Notificação 1 dia antes (09:00 AM).
-        * `Contas a pagar`: Converte para horário fixo (09:00 AM) com alerta no dia.
-        * `Excluida`: Gatilho para remoção automática no Google Calendar.
+    * `Tipo` (Select): Determina a lógica de notificação e o gatilho de exclusão. Opções: `Prova`, `Trabalho`, `Contas a pagar`, `Excluida`.
     * `Matéria` (Relation): Conexão com o banco de `Disciplinas`.
-    * `Google Calendar ID` (Rich Text): Campo técnico preenchido automaticamente pelo script. **Não editar manualmente.**
+    * `Google Calendar ID` (Rich Text): Campo técnico preenchido automaticamente pelo script.
 
 
 
 ---
 
-## 🔗 Configurando a Relação (Passo a Passo)
+## 🔗 Configuração e Conexão
 
-1.  No banco **Calendário**, adicione uma nova propriedade do tipo **Relation**.
-2.  Selecione o banco de dados **Disciplinas**.
-3.  Renomeie a propriedade para `Matéria` (certifique-se de usar a acentuação correta para que o script a localize).
-4.  Para cada item criado no Calendário, clique na célula `Matéria` e selecione a disciplina correspondente.
+### Como obter os IDs do Notion
+Para configurar o script, você precisará do `DATABASE_ID` do seu banco de dados **Calendário**.
+1. Abra o banco de dados no navegador.
+2. O ID é a sequência de 32 caracteres na URL localizada entre a última barra (`/`) e o ponto de interrogação (`?`).
+   * Exemplo: `notion.so/usuario/732095dcf0db445a963f91b0cc05a366?v=...` -> O ID é `732095dcf0db445a963f91b0cc05a366`.
 
-### 🔐 Autorização e Conexões
+### Configurando a Relação (Passo a Passo)
+1. No banco **Calendário**, adicione uma propriedade do tipo **Relation**.
+2. Selecione o banco de dados **Disciplinas**.
+3. Renomeie a propriedade para **`Matéria`** (respeite a acentuação).
+4. Para cada item no Calendário, selecione a disciplina correspondente.
 
-Para que o script acesse os dados, a integração deve ter permissão explícita em **ambas** as páginas:
-1.  No Notion, abra a página do banco de dados (faça isso tanto para o `Calendário` quanto para o `Disciplinas`).
-2.  Clique nos três pontos (**...**) no canto superior direito.
-3.  Vá em **Connections** e clique em **Add Connections**.
-4.  Pesquise e selecione o nome da sua integração (ex: `Notion Sync`).
-
+### 🔐 Autorização
+A integração deve ter permissão explícita em **ambas** as páginas:
+1. No Notion, abra as páginas dos bancos de dados.
+2. Clique nos três pontos (**...**) no canto superior direito -> **Add Connections**.
+3. Selecione o nome da sua integração.
 
 ---
 
-## 🔧 Configuração e Instalação
+## 🔧 Instalação no Google Apps Script
 
-1.  **Integração no Notion:**
-    * Crie uma integração em [notion.so/my-integrations](https://www.notion.so/my-integrations).
-    * Obtenha o `Internal Integration Token`.
-    * Compartilhe ambos os bancos de dados com a integração criada.
-
-2.  **Configuração no Google Apps Script:**
-    * Acesse o [Google Apps Script](https://script.google.com/).
-    * Crie um novo projeto e cole o código fornecido em `Code.gs`.
-    * No menu lateral, clique em **Serviços (+)** e adicione a **Google Calendar API**.
-    * Preencha as constantes no topo do script:
-        ```javascript
-        const NOTION_TOKEN = 'seu_token_aqui';
-        const DATABASE_ID = 'id_do_banco_calendario';
-        const CALENDAR_ID = 'seu_email@gmail.com';
-        ```
-
-3.  **Configuração de Gatilhos (Triggers):**
-    * No menu lateral, acesse **Acionadores (Triggers)**.
-    * Adicione um novo acionador para a função `sincronizarNotionCalendar`.
-    * Configure como **Baseado no tempo** -> **Temporizador de minutos/horas** (recomendado: 30 a 60 minutos).
+1. Acesse o [Google Apps Script](https://script.google.com/).
+2. Crie um novo projeto e cole o código fornecido em `Code.gs`.
+3. No menu lateral, clique em **Serviços (+)** e adicione a **Google Calendar API**.
+4. Configure as constantes no topo do script com o seu Token e IDs.
+5. Acesse **Acionadores (Triggers)** no menu lateral e configure a função `sincronizarNotionCalendar` para rodar "Baseado no tempo" (recomendado: a cada 30 ou 60 minutos).
 
 ## ⚠️ Observações de Manutenção
 
-* **Zelo pelo ID:** Não altere manualmente a coluna `Google Calendar ID`. Ela garante que o script não duplique eventos.
-* **Formatação de Horário:** O script utiliza `split('-')`. Certifique-se de que não existam espaços entre o hífen e os números nas colunas de dias da semana (Ex: `08:00-09:40`).
-* **Processo de Exclusão:** Para remover um evento, altere o `Tipo` para `Excluida` e aguarde a execução do script antes de deletar a linha permanentemente do Notion.
+* **Zelo pelo ID:** Nunca altere manualmente a coluna `Google Calendar ID`. Ela evita a duplicidade de eventos.
+* **Formatação:** Certifique-se de que não existam espaços nas colunas de horários (ex: use `08:00-09:40` e não `08:00 - 09:40`).
+* **Processo de Exclusão:** Altere o `Tipo` para `Excluida` e aguarde a execução do script para que o evento seja removido do Google Calendar antes de apagar a linha no Notion.
 
 ---
 
 ## 📄 Licença
 
-Este projeto é de código aberto sob a licença MIT. Sinta-se à vontade para adaptá-lo às suas necessidades acadêmicas ou profissionais.
+Este projeto está sob a licença MIT. Sinta-se à vontade para adaptá-lo às suas necessidades acadêmicas.
 
 ---
 *README gerado para fins de documentação técnica de fluxo de trabalho automatizado.*
